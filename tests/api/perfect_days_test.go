@@ -26,9 +26,30 @@ func createTestUser(srv *server.Server, username string) {
 	srv.Storage.UserStorage.Save(user)
 }
 
+func loginUser(srv *server.Server, username string) string {
+	loginReq := map[string]string{
+		"username": username,
+	}
+	reqBody, _ := json.Marshal(loginReq)
+	req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	srv.ServeHTTP(w, req)
+
+	cookies := w.Result().Cookies()
+	for _, cookie := range cookies {
+		if cookie.Name == "session_id" {
+			return cookie.Value
+		}
+	}
+	return ""
+}
+
 func TestCreatePerfectDay(t *testing.T) {
 	srv := setupTestServer()
 	createTestUser(srv, "testuser")
+	sessionID := loginUser(srv, "testuser")
 
 	tests := []struct {
 		name           string
@@ -86,7 +107,7 @@ func TestCreatePerfectDay(t *testing.T) {
 			body, _ := json.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/api/v1/perfect-days", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{Name: "session_id", Value: "test-session"})
+			req.AddCookie(&http.Cookie{Name: "session_id", Value: sessionID})
 
 			rr := httptest.NewRecorder()
 			srv.ServeHTTP(rr, req)
@@ -192,6 +213,7 @@ func TestGetPerfectDay(t *testing.T) {
 func TestUpdatePerfectDay(t *testing.T) {
 	srv := setupTestServer()
 	createTestUser(srv, "testuser")
+	sessionID := loginUser(srv, "testuser")
 
 	// Create a test perfect day
 	pd, _ := models.NewPerfectDay("test-id-update", "Original Title", "Original description", "testuser", "2025-01-15")
@@ -233,7 +255,7 @@ func TestUpdatePerfectDay(t *testing.T) {
 			body, _ := json.Marshal(tt.requestBody)
 			req := httptest.NewRequest("PUT", "/api/v1/perfect-days/"+tt.perfectDayID, bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{Name: "session_id", Value: "test-session"})
+			req.AddCookie(&http.Cookie{Name: "session_id", Value: sessionID})
 
 			rr := httptest.NewRecorder()
 			srv.ServeHTTP(rr, req)
@@ -269,6 +291,7 @@ func TestUpdatePerfectDay(t *testing.T) {
 func TestDeletePerfectDay(t *testing.T) {
 	srv := setupTestServer()
 	createTestUser(srv, "testuser")
+	sessionID := loginUser(srv, "testuser")
 
 	// Create a test perfect day
 	pd, _ := models.NewPerfectDay("test-id-delete", "To Delete", "Will be deleted", "testuser", "2025-01-15")
@@ -296,7 +319,7 @@ func TestDeletePerfectDay(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("DELETE", "/api/v1/perfect-days/"+tt.perfectDayID, nil)
-			req.AddCookie(&http.Cookie{Name: "session_id", Value: "test-session"})
+			req.AddCookie(&http.Cookie{Name: "session_id", Value: sessionID})
 
 			rr := httptest.NewRecorder()
 			srv.ServeHTTP(rr, req)

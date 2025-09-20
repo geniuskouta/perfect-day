@@ -120,11 +120,25 @@ func (h *Handlers) CreatePerfectDay(c *gin.Context) {
 		return
 	}
 
-	// For now, use a default username - in a real app, this would come from authentication
-	username := "testuser"
+	// Get authenticated username from middleware
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "UNAUTHORIZED",
+				"message": "Not authenticated",
+			},
+			"meta": gin.H{
+				"timestamp": time.Now().UTC().Format(time.RFC3339),
+				"version":   "0.1.0",
+			},
+		})
+		return
+	}
+	usernameStr := username.(string)
 
 	// Create perfect day
-	perfectDay, err := models.NewPerfectDay(utils.GenerateID(), req.Title, req.Description, username, req.Date)
+	perfectDay, err := models.NewPerfectDay(utils.GenerateID(), req.Title, req.Description, usernameStr, req.Date)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
@@ -300,6 +314,30 @@ func (h *Handlers) UpdatePerfectDay(c *gin.Context) {
 		return
 	}
 
+	// Get authenticated username and verify ownership
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "UNAUTHORIZED",
+				"message": "Not authenticated",
+			},
+		})
+		return
+	}
+	usernameStr := username.(string)
+
+	// Verify ownership
+	if existingPerfectDay.Username != usernameStr {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{
+				"code":    "FORBIDDEN",
+				"message": "You can only update your own perfect days",
+			},
+		})
+		return
+	}
+
 	// Update the perfect day
 	updatedPerfectDay, err := models.NewPerfectDay(id, req.Title, req.Description, existingPerfectDay.Username, req.Date)
 	if err != nil {
@@ -396,6 +434,30 @@ func (h *Handlers) DeletePerfectDay(c *gin.Context) {
 			"error": gin.H{
 				"code":    "NOT_FOUND",
 				"message": "Perfect day not found",
+			},
+		})
+		return
+	}
+
+	// Get authenticated username and verify ownership
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "UNAUTHORIZED",
+				"message": "Not authenticated",
+			},
+		})
+		return
+	}
+	usernameStr := username.(string)
+
+	// Verify ownership
+	if existingPerfectDay.Username != usernameStr {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{
+				"code":    "FORBIDDEN",
+				"message": "You can only delete your own perfect days",
 			},
 		})
 		return
