@@ -18,7 +18,13 @@ var loginCmd = &cobra.Command{
 }
 
 func runLogin(cmd *cobra.Command, args []string) {
-	storage := storage.NewStorage("")
+	config, err := LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	storage := storage.NewStorage(config.DataDirectory)
 	if err := storage.Initialize(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing storage: %v\n", err)
 		os.Exit(1)
@@ -62,7 +68,8 @@ func runLogin(cmd *cobra.Command, args []string) {
 }
 
 func saveCurrentUser(username string) {
-	storage := storage.NewStorage("")
+	config, _ := LoadConfig()
+	storage := storage.NewStorage(config.DataDirectory)
 	currentUserFile := fmt.Sprintf("%s/current_user", storage.GetDataDir())
 
 	if err := os.WriteFile(currentUserFile, []byte(username), 0644); err != nil {
@@ -71,7 +78,8 @@ func saveCurrentUser(username string) {
 }
 
 func getCurrentUser() string {
-	storage := storage.NewStorage("")
+	config, _ := LoadConfig()
+	storage := storage.NewStorage(config.DataDirectory)
 	currentUserFile := fmt.Sprintf("%s/current_user", storage.GetDataDir())
 
 	data, err := os.ReadFile(currentUserFile)

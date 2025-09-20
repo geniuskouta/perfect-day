@@ -30,8 +30,14 @@ func runEdit(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	storage := storage.NewStorage("")
-	placesService, _ := places.NewPlacesService(os.Getenv("GOOGLE_PLACES_API_KEY"))
+	config, err := LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	storage := storage.NewStorage(config.DataDirectory)
+	placesService, _ := places.NewPlacesService(config.GooglePlacesAPIKey)
 
 	perfectDay, err := loadPerfectDayForEdit(storage, currentUser, perfectDayID)
 	if err != nil {
