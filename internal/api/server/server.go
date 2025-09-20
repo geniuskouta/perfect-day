@@ -15,12 +15,12 @@ import (
 )
 
 type Server struct {
-	router      *gin.Engine
-	config      *config.Config
-	storage     *storage.Storage
-	authService *auth.AuthService
-	placesService *places.PlacesService
-	searchService *search.SearchService
+	router        *gin.Engine
+	config        *config.Config
+	Storage       *storage.Storage
+	AuthService   *auth.AuthService
+	PlacesService *places.PlacesService
+	SearchService *search.SearchService
 }
 
 func NewServer(cfg *config.Config) *Server {
@@ -38,10 +38,10 @@ func NewServer(cfg *config.Config) *Server {
 	// Create server
 	server := &Server{
 		config:        cfg,
-		storage:       storage,
-		authService:   authService,
-		placesService: placesService,
-		searchService: searchService,
+		Storage:       storage,
+		AuthService:   authService,
+		PlacesService: placesService,
+		SearchService: searchService,
 	}
 
 	// Setup router
@@ -63,10 +63,10 @@ func (s *Server) setupRouter() {
 
 	// Create handlers
 	handlers := &handlers.Handlers{
-		AuthService:   s.authService,
-		Storage:       s.storage,
-		PlacesService: s.placesService,
-		SearchService: s.searchService,
+		AuthService:   s.AuthService,
+		Storage:       s.Storage,
+		PlacesService: s.PlacesService,
+		SearchService: s.SearchService,
 	}
 
 	// Setup routes
