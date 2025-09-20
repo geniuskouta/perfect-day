@@ -2,11 +2,13 @@ package routes
 
 import (
 	"perfect-day/internal/api/handlers"
+	"perfect-day/internal/api/middleware"
+	"perfect-day/pkg/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(router *gin.Engine, h *handlers.Handlers) {
+func SetupRoutes(router *gin.Engine, h *handlers.Handlers, authService *auth.AuthService) {
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 
@@ -15,20 +17,20 @@ func SetupRoutes(router *gin.Engine, h *handlers.Handlers) {
 	v1.GET("/version", h.Version)
 
 	// Authentication
-	auth := v1.Group("/auth")
+	authGroup := v1.Group("/auth")
 	{
-		auth.POST("/login", h.Login)
-		auth.GET("/me", h.GetCurrentUser)
+		authGroup.POST("/login", h.Login)
+		authGroup.GET("/me", middleware.AuthRequired(authService), h.GetCurrentUser)
 	}
 
 	// Perfect days
 	perfectDays := v1.Group("/perfect-days")
 	{
-		perfectDays.GET("", h.ListPerfectDays)
-		perfectDays.POST("", h.CreatePerfectDay)
-		perfectDays.GET("/:id", h.GetPerfectDay)
-		perfectDays.PUT("/:id", h.UpdatePerfectDay)
-		perfectDays.DELETE("/:id", h.DeletePerfectDay)
+		perfectDays.GET("", h.ListPerfectDays) // Public read access
+		perfectDays.POST("", middleware.AuthRequired(authService), h.CreatePerfectDay)
+		perfectDays.GET("/:id", h.GetPerfectDay) // Public read access
+		perfectDays.PUT("/:id", middleware.AuthRequired(authService), h.UpdatePerfectDay)
+		perfectDays.DELETE("/:id", middleware.AuthRequired(authService), h.DeletePerfectDay)
 	}
 
 	// Users

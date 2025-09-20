@@ -70,7 +70,7 @@ func (s *Server) setupRouter() {
 	}
 
 	// Setup routes
-	routes.SetupRoutes(s.router, handlers)
+	routes.SetupRoutes(s.router, handlers, s.AuthService)
 }
 
 func (s *Server) Start(addr string) error {

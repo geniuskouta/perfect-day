@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"perfect-day/src/cli"
+	"perfect-day/internal/cli"
 
 	"github.com/joho/godotenv"
 )
