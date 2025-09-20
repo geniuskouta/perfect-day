@@ -3,8 +3,8 @@ package unit
 import (
 	"os"
 	"path/filepath"
-	"perfect-day/src/models"
-	"perfect-day/src/storage"
+	"perfect-day/pkg/models"
+	"perfect-day/pkg/storage"
 	"testing"
 )
 

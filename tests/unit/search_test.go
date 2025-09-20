@@ -1,8 +1,8 @@
 package unit
 
 import (
-	"perfect-day/src/models"
-	"perfect-day/src/search"
+	"perfect-day/pkg/models"
+	"perfect-day/pkg/search"
 	"testing"
 )
 
