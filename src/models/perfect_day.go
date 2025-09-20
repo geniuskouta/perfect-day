@@ -84,6 +84,11 @@ func (pd *PerfectDay) updateAreas() {
 	pd.Areas = areas
 }
 
+func (pd *PerfectDay) UpdateAreas() {
+	pd.updateAreas()
+	pd.UpdatedAt = time.Now()
+}
+
 func (pd *PerfectDay) SoftDelete() {
 	pd.IsDeleted = true
 	pd.UpdatedAt = time.Now()
