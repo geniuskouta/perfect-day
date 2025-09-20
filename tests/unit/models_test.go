@@ -1,7 +1,7 @@
 package unit
 
 import (
-	"perfect-day/src/models"
+	"perfect-day/pkg/models"
 	"strings"
 	"testing"
 	"time"
