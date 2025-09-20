@@ -22,6 +22,7 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(editCmd)

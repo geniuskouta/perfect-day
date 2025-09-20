@@ -21,10 +21,15 @@ var showCmd = &cobra.Command{
 
 func runShow(cmd *cobra.Command, args []string) {
 	perfectDayID := args[0]
-	storage := storage.NewStorage("")
+	config, err := LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	storage := storage.NewStorage(config.DataDirectory)
 
 	var perfectDay *models.PerfectDay
-	var err error
 
 	currentUser := getCurrentUser()
 	if currentUser != "" {

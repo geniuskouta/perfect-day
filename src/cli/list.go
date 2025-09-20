@@ -31,10 +31,15 @@ func init() {
 }
 
 func runList(cmd *cobra.Command, args []string) {
-	storage := storage.NewStorage("")
+	config, err := LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	storage := storage.NewStorage(config.DataDirectory)
 
 	var perfectDays []*models.PerfectDay
-	var err error
 
 	if listAll {
 		perfectDays, err = storage.PerfectDayStorage.LoadAll(listDeleted)

@@ -44,7 +44,13 @@ func init() {
 }
 
 func runSearch(cmd *cobra.Command, args []string) {
-	storage := storage.NewStorage("")
+	config, err := LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	storage := storage.NewStorage(config.DataDirectory)
 	searchService := search.NewSearchService()
 
 	allPerfectDays, err := storage.PerfectDayStorage.LoadAll(false)
