@@ -35,16 +35,16 @@ export const AddCircleIcon = ({ className = '', size = 'md' }: IconProps) => (
 );
 
 export const TimeIcon = ({ className = '', size = 'md' }: IconProps) => (
-  <ScheduleIcon className={`${iconSizes[size]} ${className}`} />
+  <ScheduleIcon className={`${iconSizes[size]} ${className}`} data-testid="time-icon" />
 );
 
 // Activity modal icons
 export const LocationIcon = ({ className = '', size = 'md' }: IconProps) => (
-  <LocationOnIcon className={`${iconSizes[size]} ${className}`} />
+  <LocationOnIcon className={`${iconSizes[size]} ${className}`} data-testid="location-icon" />
 );
 
 export const CameraIcon = ({ className = '', size = 'md' }: IconProps) => (
-  <CameraAltIcon className={`${iconSizes[size]} ${className}`} />
+  <CameraAltIcon className={`${iconSizes[size]} ${className}`} data-testid="camera-icon" />
 );
 
 export const CloseModalIcon = ({ className = '', size = 'md' }: IconProps) => (
