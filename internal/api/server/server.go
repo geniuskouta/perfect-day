@@ -59,7 +59,7 @@ func (s *Server) setupRouter() {
 	// Add middleware
 	s.router.Use(gin.Logger())
 	s.router.Use(gin.Recovery())
-	s.router.Use(middleware.CORS())
+	s.router.Use(middleware.CORS(s.config))
 
 	// Create handlers
 	handlers := &handlers.Handlers{
