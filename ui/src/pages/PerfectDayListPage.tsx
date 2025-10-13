@@ -3,7 +3,7 @@ import {
   CalendarIcon,
   ActivityIcon,
   AddCircleIcon,
-  EditActionIcon,
+  DeleteActionIcon,
 } from '../components/ui/Icons';
 import { DateSelectionModal } from '../components/modals/DateSelectionModal';
 import type { PerfectDay, Activity } from '../models';
@@ -14,6 +14,7 @@ interface PerfectDayListPageProps {
   perfectDays: PerfectDay[];
   onSelectPerfectDay: (perfectDay: PerfectDay) => void;
   onCreateNew: (date: string) => void;
+  onDelete: (perfectDayId: string) => void;
   user: { username: string } | null;
 }
 
@@ -48,9 +49,19 @@ export const PerfectDayListPage: React.FC<PerfectDayListPageProps> = ({
   perfectDays,
   onSelectPerfectDay,
   onCreateNew,
+  onDelete,
   user,
 }) => {
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    perfectDayId: string | null;
+    perfectDayTitle: string;
+  }>({
+    isOpen: false,
+    perfectDayId: null,
+    perfectDayTitle: '',
+  });
 
   const handleCreateClick = () => {
     setIsDateModalOpen(true);
@@ -58,6 +69,35 @@ export const PerfectDayListPage: React.FC<PerfectDayListPageProps> = ({
 
   const handleDateSelect = (date: string) => {
     onCreateNew(date);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, perfectDay: PerfectDay) => {
+    e.stopPropagation(); // Prevent triggering onSelectPerfectDay
+    if (!perfectDay.id) return;
+
+    setDeleteConfirmation({
+      isOpen: true,
+      perfectDayId: perfectDay.id,
+      perfectDayTitle: perfectDay.title,
+    });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirmation.perfectDayId) return;
+    onDelete(deleteConfirmation.perfectDayId);
+    setDeleteConfirmation({
+      isOpen: false,
+      perfectDayId: null,
+      perfectDayTitle: '',
+    });
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      perfectDayId: null,
+      perfectDayTitle: '',
+    });
   };
   return (
     <div className="min-h-screen bg-background">
@@ -143,7 +183,17 @@ export const PerfectDayListPage: React.FC<PerfectDayListPageProps> = ({
                           </p>
                         )}
                       </div>
-                      <EditActionIcon size="sm" className="text-muted-foreground ml-2 flex-shrink-0" />
+                      <button
+                        onClick={(e) => handleDeleteClick(e, perfectDay)}
+                        className={cn(
+                          'p-2 rounded-md bg-background/80 backdrop-blur-sm ml-2',
+                          'hover:bg-accent transition-colors',
+                          'min-h-[44px] min-w-[44px] flex items-center justify-center'
+                        )}
+                        aria-label="Delete perfect day"
+                      >
+                        <DeleteActionIcon size="sm" className="text-muted-foreground" />
+                      </button>
                     </div>
 
                     {/* Metadata */}
@@ -211,6 +261,43 @@ export const PerfectDayListPage: React.FC<PerfectDayListPageProps> = ({
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmation.isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          data-testid="delete-confirmation-overlay"
+        >
+          <div className="bg-background rounded-lg p-6 max-w-sm w-full shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Delete "{deleteConfirmation.perfectDayTitle}"
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Are you sure you want to delete this perfect day? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelDelete}
+                className={cn(
+                  'flex-1 p-3 rounded-md border border-input',
+                  'text-foreground hover:bg-accent transition-colors'
+                )}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className={cn(
+                  'flex-1 p-3 rounded-md bg-destructive text-destructive-foreground',
+                  'hover:bg-destructive/90 transition-colors font-medium'
+                )}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Date Selection Modal */}
       <DateSelectionModal

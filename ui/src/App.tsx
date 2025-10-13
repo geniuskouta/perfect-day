@@ -142,6 +142,20 @@ function App() {
     setSelectedPerfectDay(null);
   };
 
+  const handleDelete = async (perfectDayId: string) => {
+    try {
+      const result = await apiService.perfectDays.delete(perfectDayId);
+      if (result.success) {
+        // Remove the deleted perfect day from the list
+        setPerfectDays(prevDays => prevDays.filter(day => day.id !== perfectDayId));
+      } else {
+        console.error('Failed to delete perfect day:', result.error?.message);
+      }
+    } catch (err) {
+      console.error('Network error while deleting perfect day:', err);
+    }
+  };
+
   // Show auth loading
   if (authLoading) {
     return (
@@ -196,6 +210,7 @@ function App() {
           perfectDays={perfectDays}
           onSelectPerfectDay={handleSelectPerfectDay}
           onCreateNew={handleCreateNew}
+          onDelete={handleDelete}
           user={user}
         />
       </div>
