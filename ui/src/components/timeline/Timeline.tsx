@@ -47,8 +47,8 @@ export const Timeline: React.FC<TimelineProps> = ({
   const timeSlots = Array.from({ length: 15 }, (_, i) => i + 9); // 9 AM to 11 PM
   const currentTimePosition = getCurrentTimeIndicatorPosition();
 
-  const getActivityForSlot = (hour: number) => {
-    return activities.find(activity => {
+  const getActivitiesForHour = (hour: number) => {
+    return activities.filter(activity => {
       const activityHour = parseInt(activity.startTime.split(':')[0]);
       return activityHour === hour;
     });
@@ -69,7 +69,7 @@ export const Timeline: React.FC<TimelineProps> = ({
       <div className="space-y-2 py-4">
         {timeSlots.map(hour => {
           const timeString = `${hour.toString().padStart(2, '0')}:00`;
-          const activity = getActivityForSlot(hour);
+          const hourActivities = getActivitiesForHour(hour);
 
           return (
             <div key={hour} className="flex items-start space-x-3">
@@ -82,10 +82,10 @@ export const Timeline: React.FC<TimelineProps> = ({
               </div>
 
               {/* Content area */}
-              <div className="flex-1 min-h-[60px]">
-                {activity ? (
-                  /* Activity card with overlaid delete button */
-                  <div className="relative w-full">
+              <div className="flex-1 min-h-[60px] space-y-2">
+                {/* Show all activities for this hour */}
+                {hourActivities.map(activity => (
+                  <div key={activity.id} className="relative w-full">
                     <ActivityCard
                       activity={activity}
                       onEdit={onEditActivity}
@@ -103,23 +103,23 @@ export const Timeline: React.FC<TimelineProps> = ({
                       <DeleteActionIcon size="sm" className="text-muted-foreground" />
                     </button>
                   </div>
-                ) : (
-                  /* Add activity button */
-                  <button
-                    className={cn(
-                      'w-full h-12 rounded-lg border-2 border-dashed',
-                      'border-border hover:border-primary/50 hover:bg-accent/50',
-                      'flex items-center justify-center space-x-2',
-                      'text-muted-foreground hover:text-foreground',
-                      'transition-colors min-h-[44px] touch-manipulation'
-                    )}
-                    onClick={() => onAddActivity({ timeSlot: timeString })}
-                    aria-label="Add activity"
-                  >
-                    <AddCircleIcon size="sm" />
-                    <span className="text-sm">Add activity</span>
-                  </button>
-                )}
+                ))}
+
+                {/* Always show Add activity button */}
+                <button
+                  className={cn(
+                    'w-full h-12 rounded-lg border-2 border-dashed',
+                    'border-border hover:border-primary/50 hover:bg-accent/50',
+                    'flex items-center justify-center space-x-2',
+                    'text-muted-foreground hover:text-foreground',
+                    'transition-colors min-h-[44px] touch-manipulation'
+                  )}
+                  onClick={() => onAddActivity({ timeSlot: timeString })}
+                  aria-label="Add activity"
+                >
+                  <AddCircleIcon size="sm" />
+                  <span className="text-sm">Add activity</span>
+                </button>
               </div>
             </div>
           );
