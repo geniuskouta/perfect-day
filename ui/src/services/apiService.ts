@@ -293,8 +293,12 @@ class ApiService {
     ): Promise<
       ApiResponse<{
         places: Array<{
+          place_id: string;
           name: string;
-          area: string;
+          address: string;
+          latitude?: number;
+          longitude?: number;
+          area?: string;
         }>;
         query: string;
         limit?: number;
@@ -304,9 +308,40 @@ class ApiService {
       searchParams.append('q', query);
       if (params.limit) searchParams.append('limit', params.limit.toString());
 
-      return this.request(`/places/search?${searchParams.toString()}`);
+      const result = await this.request<{
+        places: Array<{
+          place_id: string;
+          name: string;
+          address: string;
+          latitude?: number;
+          longitude?: number;
+        }>;
+        query: string;
+        limit?: number;
+      }>(`/places/search?${searchParams.toString()}`);
+
+      // Transform places to extract area from address
+      if (result.success && result.data && 'places' in result.data) {
+        result.data.places = result.data.places.map((place: any) => ({
+          ...place,
+          area: this.extractAreaFromAddress(place.address || '')
+        }));
+      }
+
+      return result;
     },
   };
+
+  // Helper to extract area from address
+  private extractAreaFromAddress(address: string): string {
+    // Extract area from Japanese addresses (e.g., "Kanagawa, Yokohama, Naka Ward" -> "Yokohama")
+    const parts = address.split(',').map(p => p.trim());
+    if (parts.length >= 3) {
+      // For Japanese addresses, typically: Country, Prefecture, City, Ward
+      return parts[2] || parts[1] || 'Unknown';
+    }
+    return parts[1] || parts[0] || 'Unknown';
+  }
 
   areas = {
     list: async (): Promise<

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CloseModalIcon, LocationIcon } from '../ui/Icons';
 import { cn } from '../../lib/utils';
+import { apiService } from '../../services/apiService';
 
 interface Activity {
   id: string;
@@ -70,6 +71,9 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [showCustomLocation, setShowCustomLocation] = useState(false);
+  const [searchResults, setSearchResults] = useState<Array<{place_id: string; name: string; address: string; area?: string}>>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (initialActivity) {
@@ -89,6 +93,24 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
       }));
     }
   }, [initialActivity, timeSlot]);
+
+  // Cleanup timer on unmount or modal close
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
+
+  useEffect(() => {
+    if (!isOpen && debounceTimer) {
+      clearTimeout(debounceTimer);
+      setDebounceTimer(null);
+      setIsSearchingLocation(false);
+      setShowSearchResults(false);
+    }
+  }, [isOpen, debounceTimer]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -130,13 +152,53 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
 
   const handleLocationSearch = (value: string) => {
     setFormData(prev => ({ ...prev, location: value }));
+
+    // Clear existing timer
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
     if (value.length > 2) {
       setIsSearchingLocation(true);
-      // Simulate search delay
-      setTimeout(() => {
-        setIsSearchingLocation(false);
-      }, 500);
+      setShowSearchResults(false);
+
+      // Set new timer for 3 seconds
+      const timer = setTimeout(async () => {
+        try {
+          const result = await apiService.places.search(value, { limit: 5 });
+          if (result.success && result.data) {
+            setSearchResults(result.data.places);
+            setShowSearchResults(true);
+          } else {
+            setSearchResults([]);
+            setShowSearchResults(false);
+          }
+        } catch (error) {
+          console.error('Places search error:', error);
+          setSearchResults([]);
+          setShowSearchResults(false);
+        } finally {
+          setIsSearchingLocation(false);
+        }
+      }, 3000);
+
+      setDebounceTimer(timer);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setIsSearchingLocation(false);
     }
+  };
+
+  const handleSelectPlace = (place: {place_id: string; name: string; address: string; area?: string}) => {
+    setFormData(prev => ({
+      ...prev,
+      location: place.name,
+      area: place.area || 'Unknown'
+    }));
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setShowCustomLocation(false);
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -241,6 +303,21 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
                 Searching locations...
               </p>
             )}
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="mt-1 bg-background border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                {searchResults.map((place, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className="w-full p-2 text-left hover:bg-accent text-foreground border-b border-border last:border-b-0"
+                    onClick={() => handleSelectPlace(place)}
+                  >
+                    <div className="font-medium">{place.name}</div>
+                    <div className="text-sm text-muted-foreground">{place.area || 'Unknown area'}</div>
+                  </button>
+                ))}
+              </div>
+            )}
             {errors.location && (
               <p className="text-sm text-destructive mt-1">{errors.location}</p>
             )}
@@ -258,6 +335,30 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
                 Custom location mode enabled
               </p>
             )}
+          </div>
+
+          {/* Area */}
+          <div>
+            <label
+              htmlFor="area"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
+              Area
+            </label>
+            <input
+              id="area"
+              type="text"
+              value={formData.area}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, area: e.target.value }))
+              }
+              className={cn(
+                'w-full p-3 rounded-md border border-input',
+                'bg-background text-foreground',
+                'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+              )}
+              placeholder="e.g., Shibuya, Downtown, etc."
+            />
           </div>
 
           {/* Start Time */}
