@@ -43,6 +43,18 @@ interface PlacesSearchParams {
 }
 
 class ApiService {
+  // Transform API response from snake_case to camelCase
+  private transformPerfectDayFromApi(apiData: any): PerfectDay {
+    return {
+      ...apiData,
+      activities: apiData.activities?.map((activity: any) => ({
+        ...activity,
+        startTime: activity.start_time,
+        duration: activity.duration_minutes || activity.duration,
+      })) || []
+    };
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -154,14 +166,38 @@ class ApiService {
 
   perfectDays = {
     create: async (perfectDay: Omit<PerfectDay, 'id'>): Promise<ApiResponse<PerfectDay>> => {
-      return this.request('/perfect-days', {
+      // Transform camelCase to snake_case for API
+      const transformedPerfectDay = {
+        ...perfectDay,
+        activities: perfectDay.activities.map(activity => ({
+          ...activity,
+          start_time: activity.startTime,
+          duration: activity.duration,
+        }))
+      };
+
+      const result = await this.request('/perfect-days', {
         method: 'POST',
-        body: JSON.stringify(perfectDay),
+        body: JSON.stringify(transformedPerfectDay),
       });
+
+      // Transform response from snake_case to camelCase
+      if (result.success && result.data) {
+        result.data = this.transformPerfectDayFromApi(result.data);
+      }
+
+      return result;
     },
 
     getById: async (id: string): Promise<ApiResponse<PerfectDay>> => {
-      return this.request(`/perfect-days/${id}`);
+      const result = await this.request(`/perfect-days/${id}`);
+
+      // Transform response from snake_case to camelCase
+      if (result.success && result.data) {
+        result.data = this.transformPerfectDayFromApi(result.data);
+      }
+
+      return result;
     },
 
     list: async (params: PaginationParams = {}): Promise<
@@ -182,17 +218,43 @@ class ApiService {
       const queryString = searchParams.toString();
       const endpoint = queryString ? `/perfect-days?${queryString}` : '/perfect-days';
 
-      return this.request(endpoint);
+      const result = await this.request(endpoint);
+
+      // Transform response from snake_case to camelCase
+      if (result.success && result.data?.perfect_days) {
+        result.data.perfect_days = result.data.perfect_days.map((pd: any) =>
+          this.transformPerfectDayFromApi(pd)
+        );
+      }
+
+      return result;
     },
 
     update: async (
       id: string,
       perfectDay: Partial<PerfectDay>
     ): Promise<ApiResponse<PerfectDay>> => {
-      return this.request(`/perfect-days/${id}`, {
+      // Transform camelCase to snake_case for API
+      const transformedPerfectDay = {
+        ...perfectDay,
+        activities: perfectDay.activities?.map(activity => ({
+          ...activity,
+          start_time: activity.startTime,
+          duration: activity.duration,
+        })) || []
+      };
+
+      const result = await this.request<PerfectDay>(`/perfect-days/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(perfectDay),
+        body: JSON.stringify(transformedPerfectDay),
       });
+
+      // Transform response from snake_case to camelCase
+      if (result.success && result.data) {
+        result.data = this.transformPerfectDayFromApi(result.data);
+      }
+
+      return result;
     },
 
     delete: async (id: string): Promise<ApiResponse> => {

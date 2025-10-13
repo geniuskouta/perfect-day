@@ -42,6 +42,9 @@ func NewActivity(id, name string, location Location, startTime string, duration 
 }
 
 func validateActivityTime(timeStr string) error {
+	if timeStr == "" {
+		return fmt.Errorf("start time is required and cannot be empty")
+	}
 	_, err := time.Parse("15:04", timeStr)
 	if err != nil {
 		return fmt.Errorf("invalid time format, expected HH:MM: %v", err)
