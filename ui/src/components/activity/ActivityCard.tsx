@@ -1,5 +1,5 @@
 import React from 'react';
-import { LocationIcon, TimeIcon, EditActionIcon, DeleteActionIcon } from '../ui/Icons';
+import { LocationIcon, TimeIcon } from '../ui/Icons';
 import { cn } from '../../lib/utils';
 
 interface Activity {
@@ -19,7 +19,6 @@ interface Activity {
 interface ActivityCardProps {
   activity: Activity;
   onEdit: (activityId: string) => void;
-  onDelete: (activityId: string) => void;
   onClick: (activityId: string) => void;
 }
 
@@ -42,25 +41,10 @@ const formatDuration = (minutes: number): string => {
 export const ActivityCard: React.FC<ActivityCardProps> = ({
   activity,
   onEdit,
-  onDelete,
   onClick,
 }) => {
   const handleCardClick = (e: React.MouseEvent) => {
-    // Only trigger if clicking on the card itself, not buttons
-    if ((e.target as Element).closest('button[aria-label*="Edit"], button[aria-label*="Delete"]')) {
-      return;
-    }
     onClick(activity.id);
-  };
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit(activity.id);
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete(activity.id);
   };
 
   return (
@@ -82,33 +66,11 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
       }}
     >
       <div className="space-y-3">
-        {/* Header with title and action buttons */}
-        <div className="flex items-start justify-between">
+        {/* Header with title */}
+        <div>
           <h3 className="font-semibold text-card-foreground text-base">
             {activity.name}
           </h3>
-          <div className="flex items-center space-x-1 ml-2">
-            <button
-              className={cn(
-                'p-2 rounded-md hover:bg-accent transition-colors',
-                'min-h-[44px] min-w-[44px] flex items-center justify-center'
-              )}
-              onClick={handleEdit}
-              aria-label="Edit activity"
-            >
-              <EditActionIcon size="sm" className="text-muted-foreground" />
-            </button>
-            <button
-              className={cn(
-                'p-2 rounded-md hover:bg-destructive/10 transition-colors',
-                'min-h-[44px] min-w-[44px] flex items-center justify-center'
-              )}
-              onClick={handleDelete}
-              aria-label="Delete activity"
-            >
-              <DeleteActionIcon size="sm" className="text-destructive" />
-            </button>
-          </div>
         </div>
 
         {/* Location */}

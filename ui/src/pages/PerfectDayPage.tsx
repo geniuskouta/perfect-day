@@ -77,6 +77,15 @@ export const PerfectDayPage: React.FC<PerfectDayPageProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    activityId: string | null;
+    activityName: string;
+  }>({
+    isOpen: false,
+    activityId: null,
+    activityName: '',
+  });
 
   const activityCount = perfectDay.activities.length;
   const totalDuration = useMemo(
@@ -106,13 +115,38 @@ export const PerfectDayPage: React.FC<PerfectDayPageProps> = ({
   };
 
   const handleDeleteActivity = (activityId: string) => {
-    if (!isOwner || !onSave) return;
+    if (!isOwner) return;
+    const activity = perfectDay.activities.find(a => a.id === activityId);
+    if (activity) {
+      setDeleteConfirmation({
+        isOpen: true,
+        activityId,
+        activityName: activity.name,
+      });
+    }
+  };
+
+  const confirmDeleteActivity = () => {
+    if (!onSave || !deleteConfirmation.activityId) return;
     const updatedActivities = perfectDay.activities.filter(
-      a => a.id !== activityId
+      a => a.id !== deleteConfirmation.activityId
     );
     onSave({
       ...perfectDay,
       activities: updatedActivities,
+    });
+    setDeleteConfirmation({
+      isOpen: false,
+      activityId: null,
+      activityName: '',
+    });
+  };
+
+  const cancelDeleteActivity = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      activityId: null,
+      activityName: '',
     });
   };
 
@@ -250,6 +284,43 @@ export const PerfectDayPage: React.FC<PerfectDayPageProps> = ({
           timeSlot={selectedTimeSlot}
           initialActivity={editingActivity}
         />
+
+        {/* Delete Confirmation Dialog */}
+        {deleteConfirmation.isOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            data-testid="delete-confirmation-overlay"
+          >
+            <div className="bg-background rounded-lg p-6 max-w-sm w-full shadow-lg">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Delete Activity
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Are you sure you want to delete "{deleteConfirmation.activityName}"? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDeleteActivity}
+                  className={cn(
+                    'flex-1 p-3 rounded-md border border-input',
+                    'text-foreground hover:bg-accent transition-colors'
+                  )}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteActivity}
+                  className={cn(
+                    'flex-1 p-3 rounded-md bg-destructive text-destructive-foreground',
+                    'hover:bg-destructive/90 transition-colors font-medium'
+                  )}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

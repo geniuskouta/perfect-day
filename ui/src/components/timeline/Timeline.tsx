@@ -1,5 +1,6 @@
 import React from 'react';
-import { AddCircleIcon, TimeIcon } from '../ui/Icons';
+import { AddCircleIcon, TimeIcon, DeleteActionIcon } from '../ui/Icons';
+import { ActivityCard } from '../activity/ActivityCard';
 import { cn } from '../../lib/utils';
 
 interface Activity {
@@ -28,15 +29,6 @@ const formatTime = (hour: number): string => {
   if (hour < 12) return `${hour}:00 AM`;
   if (hour === 12) return '12:00 PM';
   return `${hour - 12}:00 PM`;
-};
-
-const formatDuration = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
 };
 
 const getCurrentTimeIndicatorPosition = (): number => {
@@ -92,37 +84,25 @@ export const Timeline: React.FC<TimelineProps> = ({
               {/* Content area */}
               <div className="flex-1 min-h-[60px]">
                 {activity ? (
-                  /* Activity card */
-                  <button
-                    className={cn(
-                      'w-full p-3 rounded-lg border text-left transition-colors',
-                      'bg-card hover:bg-accent border-border',
-                      'min-h-[44px] touch-manipulation'
-                    )}
-                    onClick={() => onEditActivity(activity.id)}
-                  >
-                    <div className="space-y-1">
-                      <h3 className="font-medium text-card-foreground">
-                        {activity.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {activity.location.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {activity.location.area}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          {formatDuration(activity.duration)}
-                        </span>
-                      </div>
-                      {activity.description && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {activity.description}
-                        </p>
+                  /* Activity card with overlaid delete button */
+                  <div className="relative w-full">
+                    <ActivityCard
+                      activity={activity}
+                      onEdit={onEditActivity}
+                      onClick={onEditActivity}
+                    />
+                    <button
+                      className={cn(
+                        'absolute top-2 right-2 p-2 rounded-md bg-background/80 backdrop-blur-sm',
+                        'hover:bg-accent transition-colors',
+                        'min-h-[44px] min-w-[44px] flex items-center justify-center z-10'
                       )}
-                    </div>
-                  </button>
+                      onClick={() => onDeleteActivity(activity.id)}
+                      aria-label="Delete activity"
+                    >
+                      <DeleteActionIcon size="sm" className="text-muted-foreground" />
+                    </button>
+                  </div>
                 ) : (
                   /* Add activity button */
                   <button
