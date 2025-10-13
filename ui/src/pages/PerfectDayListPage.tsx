@@ -71,8 +71,7 @@ export const PerfectDayListPage: React.FC<PerfectDayListPageProps> = ({
     onCreateNew(date);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, perfectDay: PerfectDay) => {
-    e.stopPropagation(); // Prevent triggering onSelectPerfectDay
+  const handleDeleteClick = (perfectDay: PerfectDay) => {
     if (!perfectDay.id) return;
 
     setDeleteConfirmation({
@@ -161,40 +160,49 @@ export const PerfectDayListPage: React.FC<PerfectDayListPageProps> = ({
               const uniqueAreas = getUniqueAreas(perfectDay.activities);
 
               return (
-                <button
+                <div
                   key={perfectDay.id}
-                  onClick={() => onSelectPerfectDay(perfectDay)}
                   className={cn(
-                    'w-full p-4 rounded-lg border text-left transition-colors',
-                    'bg-card hover:bg-accent border-border',
-                    'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                    'relative w-full p-4 rounded-lg border',
+                    'bg-card border-border'
                   )}
                 >
-                  <div className="space-y-3">
-                    {/* Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-card-foreground truncate">
-                          {perfectDay.title}
-                        </h3>
-                        {perfectDay.description && (
-                          <p className="text-muted-foreground text-sm mt-1">
-                            {perfectDay.description}
-                          </p>
-                        )}
+                  {/* Delete button positioned absolutely */}
+                  <button
+                    onClick={() => handleDeleteClick(perfectDay)}
+                    className={cn(
+                      'absolute top-2 right-2 p-2 rounded-md bg-background/80 backdrop-blur-sm',
+                      'hover:bg-accent transition-colors z-10',
+                      'min-h-[44px] min-w-[44px] flex items-center justify-center'
+                    )}
+                    aria-label="Delete perfect day"
+                  >
+                    <DeleteActionIcon size="sm" className="text-muted-foreground" />
+                  </button>
+
+                  {/* Clickable card content */}
+                  <button
+                    onClick={() => onSelectPerfectDay(perfectDay)}
+                    className={cn(
+                      'w-full text-left transition-colors rounded-lg',
+                      'hover:bg-accent/50 p-2 -m-2', // Negative margin to maintain spacing
+                      'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                    )}
+                  >
+                    <div className="space-y-3 pr-12"> {/* Add right padding for delete button */}
+                      {/* Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-card-foreground truncate">
+                            {perfectDay.title}
+                          </h3>
+                          {perfectDay.description && (
+                            <p className="text-muted-foreground text-sm mt-1">
+                              {perfectDay.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        onClick={(e) => handleDeleteClick(e, perfectDay)}
-                        className={cn(
-                          'p-2 rounded-md bg-background/80 backdrop-blur-sm ml-2',
-                          'hover:bg-accent transition-colors',
-                          'min-h-[44px] min-w-[44px] flex items-center justify-center'
-                        )}
-                        aria-label="Delete perfect day"
-                      >
-                        <DeleteActionIcon size="sm" className="text-muted-foreground" />
-                      </button>
-                    </div>
 
                     {/* Metadata */}
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -254,8 +262,9 @@ export const PerfectDayListPage: React.FC<PerfectDayListPageProps> = ({
                         )}
                       </div>
                     )}
-                  </div>
-                </button>
+                    </div>
+                  </button>
+                </div>
               );
             })
           )}

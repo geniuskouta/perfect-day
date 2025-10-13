@@ -112,3 +112,19 @@ func (pd *PerfectDay) SearchableContent() string {
 
 	return strings.ToLower(content.String())
 }
+
+// SortActivitiesByStartTime sorts the activities in this perfect day by their start time
+func (pd *PerfectDay) SortActivitiesByStartTime() {
+	sort.Slice(pd.Activities, func(i, j int) bool {
+		// Parse both times to compare them
+		timeI, errI := time.Parse("15:04", pd.Activities[i].StartTime)
+		timeJ, errJ := time.Parse("15:04", pd.Activities[j].StartTime)
+
+		// If parsing fails, keep original order
+		if errI != nil || errJ != nil {
+			return false
+		}
+
+		return timeI.Before(timeJ)
+	})
+}

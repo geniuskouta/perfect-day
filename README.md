@@ -1,3 +1,10 @@
+## Build
+
+Build the Go API server
+```
+go build -o bin/perfectday-api ./cmd/perfectday-api
+```
+
 ## Startup
 
 Run go backend

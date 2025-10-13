@@ -35,7 +35,12 @@ const getCurrentTimeIndicatorPosition = (): number => {
   const now = new Date();
   const hours = now.getHours();
   const minutes = now.getMinutes();
-  return ((hours - 9) * 60 + minutes) / (14 * 60); // 9 AM to 11 PM = 14 hours
+
+  // Calculate position within visible range (4 AM to 11 PM)
+  let position = ((hours - 4) * 60 + minutes) / (19 * 60);
+
+  // Clamp to visible range: if before 4 AM, position at start; if after 11 PM, position at end
+  return Math.max(0, Math.min(1, position));
 };
 
 export const Timeline: React.FC<TimelineProps> = ({
@@ -44,12 +49,20 @@ export const Timeline: React.FC<TimelineProps> = ({
   onEditActivity,
   onDeleteActivity,
 }) => {
-  const timeSlots = Array.from({ length: 15 }, (_, i) => i + 9); // 9 AM to 11 PM
+  const timeSlots = Array.from({ length: 20 }, (_, i) => i + 4); // 4 AM to 11 PM
   const currentTimePosition = getCurrentTimeIndicatorPosition();
 
   const getActivitiesForHour = (hour: number) => {
     return activities.filter(activity => {
       const activityHour = parseInt(activity.startTime.split(':')[0]);
+      // For the 4 AM slot, include any activities before 4 AM (0-3 AM)
+      if (hour === 4) {
+        return activityHour === 4 || activityHour < 4;
+      }
+      // For the 11 PM slot, include any activities after 11 PM (midnight and later)
+      if (hour === 23) {
+        return activityHour === 23 || activityHour > 23;
+      }
       return activityHour === hour;
     });
   };
