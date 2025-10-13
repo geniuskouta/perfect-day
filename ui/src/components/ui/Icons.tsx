@@ -16,6 +16,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // Icon wrapper with consistent sizing
 interface IconProps {
@@ -104,6 +105,10 @@ export const DeleteActionIcon = ({
 
 export const SaveActionIcon = ({ className = '', size = 'md' }: IconProps) => (
   <SaveIcon className={`${iconSizes[size]} ${className}`} />
+);
+
+export const ArrowBackActionIcon = ({ className = '', size = 'md' }: IconProps) => (
+  <ArrowBackIcon className={`${iconSizes[size]} ${className}`} />
 );
 
 // Export all icons for easy importing

@@ -1,46 +1,11 @@
+import type {
+  PerfectDay,
+  ApiResponse,
+  PaginationParams,
+  PlacesSearchParams
+} from '../models';
+
 const API_BASE_URL = 'http://localhost:8080/api/v1';
-
-interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-  };
-}
-
-interface PerfectDay {
-  id?: string;
-  title: string;
-  description: string;
-  date: string;
-  username?: string;
-  activities: Activity[];
-}
-
-interface Activity {
-  id: string;
-  name: string;
-  location: {
-    type: string;
-    name: string;
-    area: string;
-  };
-  startTime: string;
-  duration: number;
-  description: string;
-  commentary: string;
-}
-
-interface PaginationParams {
-  limit?: number;
-  offset?: number;
-  user?: string;
-}
-
-interface PlacesSearchParams {
-  limit?: number;
-}
 
 class ApiService {
   // Transform API response from snake_case to camelCase
@@ -176,7 +141,7 @@ class ApiService {
         }))
       };
 
-      const result = await this.request('/perfect-days', {
+      const result = await this.request<PerfectDay>('/perfect-days', {
         method: 'POST',
         body: JSON.stringify(transformedPerfectDay),
       });
@@ -190,7 +155,7 @@ class ApiService {
     },
 
     getById: async (id: string): Promise<ApiResponse<PerfectDay>> => {
-      const result = await this.request(`/perfect-days/${id}`);
+      const result = await this.request<PerfectDay>(`/perfect-days/${id}`);
 
       // Transform response from snake_case to camelCase
       if (result.success && result.data) {
@@ -218,7 +183,10 @@ class ApiService {
       const queryString = searchParams.toString();
       const endpoint = queryString ? `/perfect-days?${queryString}` : '/perfect-days';
 
-      const result = await this.request(endpoint);
+      const result = await this.request<{
+        perfect_days: any[];
+        pagination: { total: number; limit: number; offset: number; };
+      }>(endpoint);
 
       // Transform response from snake_case to camelCase
       if (result.success && result.data?.perfect_days) {
@@ -355,4 +323,6 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
-export type { ApiResponse, PerfectDay, Activity, PaginationParams };
+
+// Re-export types for convenience
+export type { PerfectDay, Activity, ApiResponse, PaginationParams } from '../models';

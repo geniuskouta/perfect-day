@@ -1,30 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { PerfectDayPage } from './pages/PerfectDayPage';
+import { PerfectDayListPage } from './pages/PerfectDayListPage';
 import { LoginPage } from './components/auth/LoginPage';
 import { apiService } from './services/apiService';
+import type { PerfectDay } from './models';
 import './App.css';
-
-interface PerfectDay {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  username: string;
-  activities: Array<{
-    id: string;
-    name: string;
-    location: {
-      type: string;
-      name: string;
-      area: string;
-    };
-    startTime: string;
-    duration: number;
-    description: string;
-    commentary: string;
-  }>;
-}
 
 function App() {
   const [user, setUser] = useState<{ username: string } | null>(null);
@@ -33,6 +13,8 @@ function App() {
   const [perfectDays, setPerfectDays] = useState<PerfectDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'list' | 'detail'>('list');
+  const [selectedPerfectDay, setSelectedPerfectDay] = useState<PerfectDay | null>(null);
 
   // Check authentication status on app load
   useEffect(() => {
@@ -77,15 +59,15 @@ function App() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await apiService.auth.logout();
-      setUser(null);
-      setPerfectDays([]);
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
-  };
+  // const handleLogout = async () => {
+  //   try {
+  //     await apiService.auth.logout();
+  //     setUser(null);
+  //     setPerfectDays([]);
+  //   } catch (err) {
+  //     console.error('Logout error:', err);
+  //   }
+  // };
 
   const loadPerfectDays = async () => {
     try {
@@ -108,16 +90,16 @@ function App() {
       if (updatedPerfectDay.id) {
         // Update existing
         const result = await apiService.perfectDays.update(updatedPerfectDay.id, updatedPerfectDay);
-        if (result.success) {
-          setPerfectDays(prev =>
-            prev.map(pd => pd.id === updatedPerfectDay.id ? updatedPerfectDay : pd)
-          );
+        if (result.success && result.data) {
+          // Update the working copy with server response
+          setSelectedPerfectDay(result.data);
         }
       } else {
         // Create new
         const result = await apiService.perfectDays.create(updatedPerfectDay);
         if (result.success && result.data) {
-          setPerfectDays(prev => [...prev, result.data]);
+          // Update the working copy with server response (now has ID)
+          setSelectedPerfectDay(result.data);
         }
       }
     } catch (err) {
@@ -126,9 +108,38 @@ function App() {
   };
 
   const handleShare = (perfectDayId: string) => {
+    if (!perfectDayId) {
+      console.warn('Cannot share unsaved perfect day');
+      return;
+    }
     const url = `${window.location.origin}/day/${perfectDayId}`;
     navigator.clipboard.writeText(url);
     console.log('Shared URL:', url);
+  };
+
+  const handleSelectPerfectDay = (perfectDay: PerfectDay) => {
+    setSelectedPerfectDay(perfectDay);
+    setCurrentView('detail');
+  };
+
+  const handleCreateNew = (date: string) => {
+    const newPerfectDay: PerfectDay = {
+      id: '',
+      title: 'My Perfect Day',
+      description: 'Create your perfect day timeline',
+      date: date,
+      username: user?.username || 'me',
+      activities: [],
+    };
+    setSelectedPerfectDay(newPerfectDay);
+    setCurrentView('detail');
+  };
+
+  const handleBackToList = async () => {
+    // Refresh the list when going back
+    await loadPerfectDays();
+    setCurrentView('list');
+    setSelectedPerfectDay(null);
   };
 
   // Show auth loading
@@ -177,46 +188,40 @@ function App() {
     );
   }
 
-  // For now, create a sample perfect day if none exist
-  const samplePerfectDay: PerfectDay = {
+  // Show list or detail view based on current state
+  if (currentView === 'list') {
+    return (
+      <div className="bg-background text-foreground">
+        <PerfectDayListPage
+          perfectDays={perfectDays}
+          onSelectPerfectDay={handleSelectPerfectDay}
+          onCreateNew={handleCreateNew}
+          user={user}
+        />
+      </div>
+    );
+  }
+
+  // Detail view
+  const currentPerfectDay = selectedPerfectDay || {
     id: '',
     title: 'My Perfect Day',
     description: 'Create your perfect day timeline',
     date: new Date().toISOString().split('T')[0],
-    username: 'me',
+    username: user?.username || 'me',
     activities: [],
   };
 
-  const currentPerfectDay = perfectDays[0] || samplePerfectDay;
-
   return (
-    <Router>
-      <div className="bg-background text-foreground">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <PerfectDayPage
-                perfectDay={currentPerfectDay}
-                isOwner={true}
-                onSave={handleSave}
-                onShare={handleShare}
-              />
-            }
-          />
-          <Route
-            path="/day/:id"
-            element={
-              <PerfectDayPage
-                perfectDay={currentPerfectDay}
-                isOwner={false}
-                onShare={handleShare}
-              />
-            }
-          />
-        </Routes>
-      </div>
-    </Router>
+    <div className="bg-background text-foreground">
+      <PerfectDayPage
+        perfectDay={currentPerfectDay}
+        isOwner={true}
+        onSave={handleSave}
+        onShare={handleShare}
+        onBack={handleBackToList}
+      />
+    </div>
   );
 }
 

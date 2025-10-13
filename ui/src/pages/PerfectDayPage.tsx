@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Timeline } from '../components/timeline/Timeline';
 import { ActivityModal } from '../components/activity/ActivityModal';
 import {
@@ -6,31 +6,13 @@ import {
   EditActionIcon,
   CalendarIcon,
   ActivityIcon,
+  ArrowBackActionIcon,
+  SaveActionIcon,
+  CloseModalIcon,
 } from '../components/ui/Icons';
+import type { PerfectDay, Activity } from '../models';
 import { cn } from '../lib/utils';
 
-interface Activity {
-  id: string;
-  name: string;
-  location: {
-    type: string;
-    name: string;
-    area: string;
-  };
-  startTime: string;
-  duration: number;
-  description: string;
-  commentary: string;
-}
-
-interface PerfectDay {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  username: string;
-  activities: Activity[];
-}
 
 interface PerfectDayPageProps {
   perfectDay: PerfectDay;
@@ -38,6 +20,7 @@ interface PerfectDayPageProps {
   isSaving?: boolean;
   onSave?: (updatedPerfectDay: PerfectDay) => void;
   onShare?: (perfectDayId: string) => void;
+  onBack?: () => void;
 }
 
 const formatDate = (dateString: string): string => {
@@ -73,6 +56,7 @@ export const PerfectDayPage: React.FC<PerfectDayPageProps> = ({
   isSaving = false,
   onSave,
   onShare,
+  onBack,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
@@ -86,6 +70,14 @@ export const PerfectDayPage: React.FC<PerfectDayPageProps> = ({
     activityId: null,
     activityName: '',
   });
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(perfectDay.title);
+  const isClickingButtonRef = useRef(false);
+
+  // Update edited title when perfectDay changes
+  useEffect(() => {
+    setEditedTitle(perfectDay.title);
+  }, [perfectDay.title]);
 
   const activityCount = perfectDay.activities.length;
   const totalDuration = useMemo(
@@ -189,8 +181,53 @@ export const PerfectDayPage: React.FC<PerfectDayPageProps> = ({
   };
 
   const handleShare = () => {
-    if (onShare) {
+    if (onShare && perfectDay.id) {
       onShare(perfectDay.id);
+    }
+  };
+
+  const handleTitleEdit = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleSave = () => {
+    isClickingButtonRef.current = true;
+
+    if (!onSave || editedTitle.trim() === '') {
+      setEditedTitle(perfectDay.title);
+      setIsEditingTitle(false);
+      return;
+    }
+
+    const updatedPerfectDay = {
+      ...perfectDay,
+      title: editedTitle.trim(),
+    };
+
+    onSave(updatedPerfectDay);
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleCancel = () => {
+    isClickingButtonRef.current = true;
+    setEditedTitle(perfectDay.title);
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleBlur = () => {
+    // Only save if we're not clicking a button
+    if (!isClickingButtonRef.current) {
+      handleTitleSave();
+    }
+    // Reset the flag
+    isClickingButtonRef.current = false;
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      handleTitleCancel();
     }
   };
 
@@ -204,13 +241,70 @@ export const PerfectDayPage: React.FC<PerfectDayPageProps> = ({
         <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-40 border-b border-border">
           <div className="p-4">
             <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-foreground truncate">
-                  {perfectDay.title}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {perfectDay.description}
-                </p>
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                {onBack && (
+                  <button
+                    onClick={onBack}
+                    className="p-2 rounded-md hover:bg-accent transition-colors flex-shrink-0"
+                    aria-label="Back to list"
+                  >
+                    <ArrowBackActionIcon size="sm" className="text-muted-foreground" />
+                  </button>
+                )}
+                <div className="flex-1 min-w-0">
+                  {isEditingTitle ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        onKeyDown={handleTitleKeyDown}
+                        onBlur={handleTitleBlur}
+                        className={cn(
+                          'flex-1 text-2xl font-bold bg-transparent border-none outline-none',
+                          'text-foreground placeholder-muted-foreground',
+                          'focus:ring-2 focus:ring-ring rounded px-1 -ml-1'
+                        )}
+                        placeholder="Enter title..."
+                        autoFocus
+                      />
+                      <button
+                        onMouseDown={() => { isClickingButtonRef.current = true; }}
+                        onClick={handleTitleSave}
+                        className="p-1 hover:bg-accent rounded transition-colors"
+                        aria-label="Save title"
+                      >
+                        <SaveActionIcon size="sm" className="text-muted-foreground" />
+                      </button>
+                      <button
+                        onMouseDown={() => { isClickingButtonRef.current = true; }}
+                        onClick={handleTitleCancel}
+                        className="p-1 hover:bg-accent rounded transition-colors"
+                        aria-label="Cancel edit"
+                      >
+                        <CloseModalIcon size="sm" className="text-muted-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 group">
+                      <h1 className="text-2xl font-bold text-foreground truncate">
+                        {editedTitle}
+                      </h1>
+                      {isOwner && (
+                        <button
+                          onClick={handleTitleEdit}
+                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-accent rounded transition-all"
+                          aria-label="Edit title"
+                        >
+                          <EditActionIcon size="sm" className="text-muted-foreground" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-muted-foreground mt-1">
+                    {perfectDay.description}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center space-x-2 ml-4">
                 <button
