@@ -12,6 +12,7 @@ type Config struct {
 	Timezone         string `json:"timezone"`
 	DataDir          string `json:"data_dir"`
 	GooglePlacesAPIKey string `json:"google_places_api_key,omitempty"`
+	FrontendUrl      string `json:"frontend_url"`
 }
 
 func LoadConfig(configPath string) (*Config, error) {

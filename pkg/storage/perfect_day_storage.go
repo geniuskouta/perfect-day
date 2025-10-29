@@ -22,6 +22,9 @@ func (pds *PerfectDayStorage) Save(perfectDay *models.PerfectDay) error {
 		return err
 	}
 
+	// Sort activities by start time before saving
+	perfectDay.SortActivitiesByStartTime()
+
 	userDir := filepath.Join(pds.dataDir, "perfect-days", perfectDay.Username)
 	if err := os.MkdirAll(userDir, 0755); err != nil {
 		return fmt.Errorf("failed to create user directory: %v", err)
@@ -55,6 +58,9 @@ func (pds *PerfectDayStorage) Load(username, id string) (*models.PerfectDay, err
 	if err := json.Unmarshal(data, &perfectDay); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal perfect day: %v", err)
 	}
+
+	// Sort activities by start time before returning
+	perfectDay.SortActivitiesByStartTime()
 
 	return &perfectDay, nil
 }
